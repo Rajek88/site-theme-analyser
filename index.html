@@ -259,15 +259,18 @@
               overflow-x: auto;
             "
           ><code style="color: #333;">
-<span class="js-comment">// Load the analyzer</span>
-<span class="js-keyword">const</span> <span class="js-variable">script</span> = <span class="js-function">document.createElement</span>(<span class="js-string">'script'</span>);
-<span class="js-variable">script</span>.<span class="js-variable">src</span> = <span class="js-string js-url-placeholder">'REPLACE_WITH_ACTUAL_URL'</span>;
-<span class="js-variable">script</span>.<span class="js-variable">onload</span> = <span class="js-keyword">function</span>() {
-    <span class="js-keyword">const</span> <span class="js-variable">results</span> = <span class="js-function">analyzeWebsiteColors</span>();
-    <span class="js-function">console.log</span>(<span class="js-string">'🎨 Analysis Results:'</span>, <span class="js-variable">results</span>);
-    <span class="js-function">console.log</span>(<span class="js-string">'📋 JSON Output:'</span>, <span class="js-function">JSON.stringify</span>(<span class="js-variable">results</span>, <span class="js-keyword">null</span>, <span class="js-number">2</span>));
-};
-<span class="js-function">document.head.appendChild</span>(<span class="js-variable">script</span>);</code></pre>
+        <span class="js-comment">// Fetch and execute the analyzer</span>
+        <span class="js-function">fetch</span>(<span class="js-string js-url-placeholder">'REPLACE_WITH_ACTUAL_URL'</span>)
+            .<span class="js-function">then</span>(<span class="js-variable">response</span> => <span class="js-variable">response</span>.<span class="js-function">text</span>())
+            .<span class="js-function">then</span>(<span class="js-variable">code</span> => {
+                <span class="js-function">eval</span>(<span class="js-variable">code</span>);
+                <span class="js-keyword">const</span> <span class="js-variable">results</span> = <span class="js-function">analyzeWebsiteColors</span>();
+                <span class="js-function">console.log</span>(<span class="js-string">'🎨 Analysis Results:'</span>, <span class="js-variable">results</span>);
+                <span class="js-function">console.log</span>(<span class="js-string">'📋 JSON Output:'</span>, <span class="js-function">JSON.stringify</span>(<span class="js-variable">results</span>, <span class="js-keyword">null</span>, <span class="js-number">2</span>));
+            })
+            .<span class="js-function">catch</span>(<span class="js-variable">error</span> => {
+                <span class="js-function">console.error</span>(<span class="js-string">'Failed to load analyzer:'</span>, <span class="js-variable">error</span>);
+            });</code></pre>
       </div>
 
       <!-- Iframe Analysis Component -->
