@@ -337,7 +337,7 @@
        document.addEventListener("DOMContentLoaded", function () {
          const consoleCode = document.getElementById("consoleCode");
          if (consoleCode) {
-           const actualUrl = window.location.origin + "/website_analyzer.js";
+           const actualUrl = window.location.href.replace(/\/[^\/]*$/, '') + "/website_analyzer.js";
            // Find the specific span containing the URL placeholder
            const placeholderSpan = consoleCode.querySelector(
              ".js-url-placeholder"
