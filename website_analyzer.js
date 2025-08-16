@@ -1,6 +1,6 @@
 /**
- * Website Color and Font Analyzer
- * Analyzes a website to extract color scheme and font information
+ * Website Color and Font Analyzer Library
+ * Core analysis functionality for extracting color schemes and typography
  */
 
 class WebsiteAnalyzer {
@@ -589,7 +589,29 @@ class WebsiteAnalyzer {
  */
 function analyzeWebsiteColors() {
     const analyzer = new WebsiteAnalyzer();
-    return analyzer.analyzeWebsite();
+    const results = analyzer.analyzeWebsite();
+    
+    // Console log the results for easy viewing
+    console.log('🎨 Website Analysis Results:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🌐 URL:', results.url || window.location.href);
+    console.log('📅 Analysis Time:', new Date(results.analysis_timestamp).toLocaleString());
+    console.log('');
+    console.log('🎨 COLORS:');
+    console.log('  🖼️  Background Color:', results.background_color || 'Not detected');
+    console.log('  ✏️  Primary Font Color:', results.primary_color_font || 'Not detected');
+    console.log('  🔘 Primary Button Color:', results.primary_color_button || 'Not detected');
+    console.log('  ✏️  Secondary Font Color:', results.secondary_color_font || 'Not detected');
+    console.log('  🔘 Secondary Button Color:', results.secondary_color_button || 'Not detected');
+    console.log('');
+    console.log('🔤 TYPOGRAPHY:');
+    console.log('  📝 Website Font:', results.font || 'Not detected');
+    console.log('');
+    console.log('📋 JSON Output:');
+    console.log(JSON.stringify(results, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    return results;
 }
 
 /**
@@ -604,8 +626,12 @@ async function analyzeWebsiteByURL(url) {
             const response = await fetch(url, {
                 method: 'GET',
                 mode: 'cors',
+                cache: 'no-cache',
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
                 }
             });
             
@@ -636,7 +662,9 @@ async function analyzeWebsiteByURL(url) {
         return new Promise((resolve, reject) => {
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
-            iframe.src = url;
+            // Add cache-busting parameter
+            const separator = url.includes('?') ? '&' : '?';
+            iframe.src = url + separator + '_cacheBust=' + Date.now();
             
             iframe.onload = () => {
                 try {
@@ -689,26 +717,6 @@ function analyzeHTMLContent(html, url) {
         // Create a temporary analyzer that works with the parsed document
         const tempAnalyzer = new WebsiteAnalyzer();
         
-        // Override the document reference temporarily
-        const originalDocument = document;
-        const originalWindow = window;
-        
-        // Create a mock window object with the parsed document
-        const mockWindow = {
-            getComputedStyle: (element) => {
-                // Extract inline styles and basic CSS
-                const style = {};
-                if (element.style) {
-                    for (let prop in element.style) {
-                        if (element.style[prop] && typeof element.style[prop] === 'string') {
-                            style[prop] = element.style[prop];
-                        }
-                    }
-                }
-                return style;
-            }
-        };
-        
         // Override the analyzer's methods to work with parsed HTML
         tempAnalyzer.extractBackgroundColor = function() {
             const body = doc.querySelector('body');
@@ -727,7 +735,6 @@ function analyzeHTMLContent(html, url) {
                 const styleTags = doc.querySelectorAll('style');
                 for (let styleTag of styleTags) {
                     const cssText = styleTag.textContent;
-                    // Look for both background and background-color properties
                     const bgMatch = cssText.match(/body\s*\{[^}]*background(?:-color)?\s*:\s*([^;]+)/i);
                     if (bgMatch) {
                         this.colors.background = this.normalizeColor(bgMatch[1].trim());
@@ -872,729 +879,10 @@ function analyzeHTMLContent(html, url) {
 
 // Export for use in different environments
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { WebsiteAnalyzer, analyzeWebsiteColors, analyzeWebsiteByURL };
+    module.exports = { WebsiteAnalyzer, analyzeWebsiteColors, analyzeWebsiteByURL, analyzeHTMLContent };
 } else if (typeof window !== 'undefined') {
     window.WebsiteAnalyzer = WebsiteAnalyzer;
     window.analyzeWebsiteColors = analyzeWebsiteColors;
     window.analyzeWebsiteByURL = analyzeWebsiteByURL;
-    
-    // Demo functionality
-    window.analyzeCurrentPage = analyzeCurrentPage;
-    window.analyzeByURL = analyzeByURL;
-    window.openInNewTabWithInstructions = openInNewTabWithInstructions;
-    window.displayResults = displayResults;
-    window.displayError = displayError;
-    window.retryIframeAnalysis = retryIframeAnalysis;
-    window.closeIframeAnalysis = closeIframeAnalysis;
-    window.tryFallbackMethods = tryFallbackMethods;
-    window.analyzeWebsiteInVisibleIframe = analyzeWebsiteInVisibleIframe;
-}
-
-// Demo functions
-function analyzeCurrentPage() {
-    const resultsDiv = document.getElementById("results");
-    if (!resultsDiv) return;
-    
-    resultsDiv.innerHTML = '<div class="loading">Analyzing current page...</div>';
-    
-    try {
-        const results = analyzeWebsiteColors();
-        displayResults(results);
-    } catch (error) {
-        displayError("Failed to analyze current page: " + error.message);
-    }
-}
-
-async function analyzeByURL() {
-    const urlInput = document.getElementById("urlInput");
-    const headlessMode = document.getElementById("headlessMode");
-    const resultsDiv = document.getElementById("results");
-    
-    if (!urlInput || !headlessMode || !resultsDiv) return;
-    
-    const url = urlInput.value.trim();
-    if (!url) {
-        displayError("Please enter a valid URL");
-        return;
-    }
-
-    if (headlessMode.checked) {
-        // Headless mode: Try all fallback methods silently in background
-        resultsDiv.innerHTML = '<div class="loading">Analyzing website in background...<br>This may take a few seconds...</div>';
-        
-        // Add timeout wrapper to iframe analysis
-        const iframeTimeout = setTimeout(() => {
-            console.log("Background analysis timed out, trying fallback methods...");
-            // Try fallback methods when iframe times out
-            tryFallbackMethods(url);
-        }, 20000); // 20 second timeout
-        
-        try {
-            const results = await analyzeWebsiteInIframe(url);
-            clearTimeout(iframeTimeout); // Clear timeout if successful
-            
-            if (results.fallback) {
-                // Fallback case - try additional methods
-                console.log("Iframe failed, trying fallback methods...");
-                tryFallbackMethods(url);
-            } else {
-                // Normal results
-                displayResults(results);
-            }
-        } catch (error) {
-            clearTimeout(iframeTimeout); // Clear timeout on error
-            // If iframe analysis fails completely, try fallback methods
-            console.log("Background analysis failed, trying fallback methods:", error.message);
-            tryFallbackMethods(url);
-        }
-    } else {
-        // Non-headless mode: Show iframe and run analysis visibly
-        resultsDiv.innerHTML = '<div class="loading">Loading website in iframe for analysis...<br>This may take a few seconds...</div>';
-        
-        try {
-            const results = await analyzeWebsiteInVisibleIframe(url);
-            displayResults(results);
-        } catch (error) {
-            displayError("Failed to analyze website: " + error.message);
-        }
-    }
-}
-
-// Function to analyze website using iframe
-function analyzeWebsiteInIframe(url) {
-    return new Promise((resolve, reject) => {
-        // Create a hidden iframe for silent background analysis
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none'; // Hidden for true headless operation
-        iframe.src = url;
-        
-        // Add iframe to page
-        document.body.appendChild(iframe);
-        
-        // Set timeout for iframe loading
-        const timeout = setTimeout(() => {
-            cleanup();
-            reject(new Error('Website analysis timed out'));
-        }, 15000); // 15 second timeout
-        
-        // Function to clean up iframe
-        function cleanup() {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-            clearTimeout(timeout);
-        }
-        
-        // Handle iframe load
-        iframe.onload = function() {
-            try {
-                // Try to access iframe content
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                
-                // Inject our analyzer code into the iframe
-                const script = iframeDoc.createElement('script');
-                script.textContent = `
-                    // Website Analyzer Code
-                    ${WebsiteAnalyzer.toString()}
-                    ${analyzeWebsiteColors.toString()}
-                    
-                    // Run analysis and send result back
-                    try {
-                        const results = analyzeWebsiteColors();
-                        window.parent.postMessage({
-                            type: 'ANALYSIS_RESULT',
-                            results: results
-                        }, '*');
-                    } catch (error) {
-                        window.parent.postMessage({
-                            type: 'ANALYSIS_ERROR',
-                            error: error.message
-                        }, '*');
-                    }
-                `;
-                
-                iframeDoc.head.appendChild(script);
-                
-            } catch (error) {
-                // If we can't access iframe content due to CORS, try alternative method
-                console.log('Iframe access blocked, trying alternative method...');
-                tryAlternativeMethod();
-            }
-        };
-        
-        // Handle iframe errors
-        iframe.onerror = function() {
-            cleanup();
-            reject(new Error('Failed to load website'));
-        };
-        
-        // Alternative method using postMessage
-        function tryAlternativeMethod() {
-            // Send message to iframe with analyzer code
-            iframe.contentWindow.postMessage({
-                type: 'ANALYZE_WEBSITE',
-                analyzerCode: WebsiteAnalyzer.toString() + '\n' + analyzeWebsiteColors.toString()
-            }, '*');
-            
-            // Listen for response
-            const messageHandler = function(event) {
-                if (event.source === iframe.contentWindow) {
-                    if (event.data.type === 'ANALYSIS_RESULT') {
-                        window.removeEventListener('message', messageHandler);
-                        cleanup();
-                        resolve(event.data.results);
-                    } else if (event.data.type === 'ANALYSIS_ERROR') {
-                        window.removeEventListener('message', messageHandler);
-                        cleanup();
-                        reject(new Error(event.data.error));
-                    }
-                }
-            };
-            
-            window.addEventListener('message', messageHandler);
-            
-            // Set timeout for message response
-            setTimeout(() => {
-                window.removeEventListener('message', messageHandler);
-                cleanup();
-                // In headless mode, we don't fall back to new tabs
-                resolve({ fallback: true, message: 'CORS restrictions prevent background analysis.' });
-            }, 5000);
-        }
-        
-        // Listen for messages from iframe
-        window.addEventListener('message', function(event) {
-            if (event.source === iframe.contentWindow) {
-                if (event.data.type === 'ANALYSIS_RESULT') {
-                    cleanup();
-                    resolve(event.data.results);
-                } else if (event.data.type === 'ANALYSIS_ERROR') {
-                    cleanup();
-                    reject(new Error(event.data.error));
-                }
-            }
-        });
-    });
-}
-
-// Function to analyze website using visible iframe (non-headless mode)
-function analyzeWebsiteInVisibleIframe(url) {
-    return new Promise((resolve, reject) => {
-        // Show the iframe container
-        const iframeContainer = document.getElementById('iframeContainer');
-        const iframe = document.getElementById('analysisIframe');
-        const iframeStatus = document.getElementById('iframeStatus');
-        
-        if (!iframeContainer || !iframe || !iframeStatus) {
-            reject(new Error('Iframe components not found'));
-            return;
-        }
-        
-        // Show iframe container and update status
-        iframeContainer.style.display = 'block';
-        iframeStatus.textContent = 'Loading website...';
-        iframeStatus.style.color = '#007bff';
-        
-        // Set iframe source
-        iframe.src = url;
-        
-        // Set timeout for iframe loading
-        const timeout = setTimeout(() => {
-            iframeStatus.textContent = 'Analysis timed out';
-            iframeStatus.style.color = '#dc3545';
-            reject(new Error('Website analysis timed out'));
-        }, 15000); // 15 second timeout
-        
-        // Function to clean up iframe
-        function cleanup() {
-            clearTimeout(timeout);
-            iframeStatus.textContent = 'Analysis completed';
-            iframeStatus.style.color = '#28a745';
-        }
-        
-        // Handle iframe load
-        iframe.onload = function() {
-            iframeStatus.textContent = 'Running analysis...';
-            iframeStatus.style.color = '#ffc107';
-            
-            try {
-                // Try to access iframe content
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                
-                // Inject our analyzer code into the iframe
-                const script = iframeDoc.createElement('script');
-                script.textContent = `
-                    // Website Analyzer Code
-                    ${WebsiteAnalyzer.toString()}
-                    ${analyzeWebsiteColors.toString()}
-                    
-                    // Run analysis and send result back
-                    try {
-                        const results = analyzeWebsiteColors();
-                        window.parent.postMessage({
-                            type: 'ANALYSIS_RESULT',
-                            results: results
-                        }, '*');
-                    } catch (error) {
-                        window.parent.postMessage({
-                            type: 'ANALYSIS_ERROR',
-                            error: error.message
-                        }, '*');
-                    }
-                `;
-                
-                iframeDoc.head.appendChild(script);
-                
-            } catch (error) {
-                // If we can't access iframe content due to CORS, try alternative method
-                console.log('Iframe access blocked, trying alternative method...');
-                iframeStatus.textContent = 'CORS blocked, trying alternative method...';
-                iframeStatus.style.color = '#ffc107';
-                tryAlternativeMethod();
-            }
-        };
-        
-        // Handle iframe errors
-        iframe.onerror = function() {
-            iframeStatus.textContent = 'Failed to load website';
-            iframeStatus.style.color = '#dc3545';
-            cleanup();
-            reject(new Error('Failed to load website'));
-        };
-        
-        // Alternative method using postMessage
-        function tryAlternativeMethod() {
-            // Send message to iframe with analyzer code
-            iframe.contentWindow.postMessage({
-                type: 'ANALYZE_WEBSITE',
-                analyzerCode: WebsiteAnalyzer.toString() + '\n' + analyzeWebsiteColors.toString()
-            }, '*');
-            
-            // Listen for response
-            const messageHandler = function(event) {
-                if (event.source === iframe.contentWindow) {
-                    if (event.data.type === 'ANALYSIS_RESULT') {
-                        window.removeEventListener('message', messageHandler);
-                        cleanup();
-                        resolve(event.data.results);
-                    } else if (event.data.type === 'ANALYSIS_ERROR') {
-                        window.removeEventListener('message', messageHandler);
-                        cleanup();
-                        reject(new Error(event.data.error));
-                    }
-                }
-            };
-            
-            window.addEventListener('message', messageHandler);
-            
-            // Set timeout for message response
-            setTimeout(() => {
-                window.removeEventListener('message', messageHandler);
-                cleanup();
-                reject(new Error('Alternative method also failed due to CORS restrictions'));
-            }, 5000);
-        }
-        
-        // Listen for messages from iframe
-        window.addEventListener('message', function(event) {
-            if (event.source === iframe.contentWindow) {
-                if (event.data.type === 'ANALYSIS_RESULT') {
-                    cleanup();
-                    resolve(event.data.results);
-                } else if (event.data.type === 'ANALYSIS_ERROR') {
-                    cleanup();
-                    reject(new Error(event.data.error));
-                }
-            }
-        });
-    });
-}
-
-// Function to try all fallback methods (headless mode)
-async function tryFallbackMethods(url) {
-    console.log('Trying comprehensive fallback methods...');
-    
-    // Method 1: Try CORS proxy
-    try {
-        console.log('Trying CORS proxy method...');
-        const results = await tryCorsProxy(url);
-        if (results) {
-            displayResults(results);
-            return;
-        }
-    } catch (error) {
-        console.log('CORS proxy failed:', error.message);
-    }
-    
-    // Method 2: Try fetch with different modes
-    try {
-        console.log('Trying fetch with different modes...');
-        const results = await tryFetchMethods(url);
-        if (results) {
-            displayResults(results);
-            return;
-        }
-    } catch (error) {
-        console.log('Fetch methods failed:', error.message);
-    }
-    
-    // Method 3: Try iframe with different sandbox settings
-    try {
-        console.log('Trying iframe with different sandbox settings...');
-        const results = await tryIframeSandboxVariations(url);
-        if (results) {
-            displayResults(results);
-            return;
-        }
-    } catch (error) {
-        console.log('Iframe sandbox variations failed:', error.message);
-    }
-    
-    // Method 4: Final fallback - open in new tab with instructions
-    console.log('All fallback methods failed, opening new tab with instructions...');
-    openInNewTabWithInstructions(url);
-}
-
-// Method 1: CORS Proxy
-async function tryCorsProxy(url) {
-    try {
-        const corsProxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const response = await fetch(corsProxyUrl);
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.contents) {
-                return analyzeHTMLContent(data.contents, url);
-            }
-        }
-    } catch (error) {
-        console.log('CORS proxy error:', error.message);
-    }
-    
-    // Try alternative proxy
-    try {
-        const corsProxyUrl2 = `https://cors-anywhere.herokuapp.com/${url}`;
-        const response = await fetch(corsProxyUrl2);
-        
-        if (response.ok) {
-            const html = await response.text();
-            return analyzeHTMLContent(html, url);
-        }
-    } catch (error) {
-        console.log('Alternative CORS proxy error:', error.message);
-    }
-    
-    return null;
-}
-
-// Method 2: Fetch with different modes
-async function tryFetchMethods(url) {
-    const fetchOptions = [
-        { mode: 'cors' },
-        { mode: 'no-cors' },
-        { credentials: 'omit' },
-        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } }
-    ];
-    
-    for (const options of fetchOptions) {
-        try {
-            const response = await fetch(url, options);
-            if (response.ok) {
-                const html = await response.text();
-                return analyzeHTMLContent(html, url);
-            }
-        } catch (error) {
-            console.log(`Fetch with options ${JSON.stringify(options)} failed:`, error.message);
-        }
-    }
-    
-    return null;
-}
-
-// Method 3: Iframe with different sandbox settings
-async function tryIframeSandboxVariations(url) {
-    const sandboxOptions = [
-        'allow-scripts allow-same-origin',
-        'allow-scripts allow-same-origin allow-forms',
-        'allow-scripts allow-same-origin allow-forms allow-popups',
-        'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation'
-    ];
-    
-    for (const sandbox of sandboxOptions) {
-        try {
-            const results = await tryIframeWithSandbox(url, sandbox);
-            if (results) {
-                return results;
-            }
-        } catch (error) {
-            console.log(`Iframe with sandbox "${sandbox}" failed:`, error.message);
-        }
-    }
-    
-    return null;
-}
-
-// Helper function for iframe sandbox variations
-function tryIframeWithSandbox(url, sandbox) {
-    return new Promise((resolve, reject) => {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.sandbox = sandbox;
-        iframe.src = url;
-        
-        document.body.appendChild(iframe);
-        
-        const timeout = setTimeout(() => {
-            cleanup();
-            reject(new Error('Sandbox iframe timeout'));
-        }, 10000);
-        
-        function cleanup() {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-            clearTimeout(timeout);
-        }
-        
-        iframe.onload = function() {
-            try {
-                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                const script = iframeDoc.createElement('script');
-                script.textContent = `
-                    ${WebsiteAnalyzer.toString()}
-                    ${analyzeWebsiteColors.toString()}
-                    
-                    try {
-                        const results = analyzeWebsiteColors();
-                        window.parent.postMessage({
-                            type: 'ANALYSIS_RESULT',
-                            results: results
-                        }, '*');
-                    } catch (error) {
-                        window.parent.postMessage({
-                            type: 'ANALYSIS_ERROR',
-                            error: error.message
-                        }, '*');
-                    }
-                `;
-                
-                iframeDoc.head.appendChild(script);
-                
-                // Listen for response
-                const messageHandler = function(event) {
-                    if (event.source === iframe.contentWindow) {
-                        if (event.data.type === 'ANALYSIS_RESULT') {
-                            window.removeEventListener('message', messageHandler);
-                            cleanup();
-                            resolve(event.data.results);
-                        } else if (event.data.type === 'ANALYSIS_ERROR') {
-                            window.removeEventListener('message', messageHandler);
-                            cleanup();
-                            reject(new Error(event.data.error));
-                        }
-                    }
-                };
-                
-                window.addEventListener('message', messageHandler);
-                
-                setTimeout(() => {
-                    window.removeEventListener('message', messageHandler);
-                    cleanup();
-                    reject(new Error('Sandbox iframe message timeout'));
-                }, 8000);
-                
-            } catch (error) {
-                cleanup();
-                reject(error);
-            }
-        };
-        
-        iframe.onerror = function() {
-            cleanup();
-            reject(new Error('Sandbox iframe load error'));
-        };
-    });
-}
-
-// Fallback method: Open in new tab with instructions
-function openInNewTabWithInstructions(url) {
-    try {
-        // Force popup blocker check
-        const newTab = window.open(url, '_blank', 'noopener,noreferrer');
-        
-        if (newTab && !newTab.closed) {
-            // Successfully opened new tab
-            console.log('New tab opened successfully');
-            
-            // Show instructions for manual analysis
-            const resultsDiv = document.getElementById("results");
-            if (resultsDiv) {
-                resultsDiv.innerHTML = `
-                    <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107;">
-                        <h3>🌐 Site Opened in New Tab</h3>
-                        <p><strong>✅ Success!</strong> The website has been opened in a new tab.</p>
-                        <p><strong>To analyze this website:</strong></p>
-                        <ol>
-                            <li>Go to the new tab that just opened</li>
-                            <li>Open browser console (F12 → Console tab)</li>
-                            <li>Copy and paste this code:</li>
-                            <code style="background: #f8f9fa; padding: 10px; border-radius: 5px; display: block; margin: 10px 0; font-family: monospace; white-space: pre-wrap;">
-// Load the analyzer
-const script = document.createElement('script');
-script.src = '${window.location.origin}/website_analyzer.js';
-script.onload = function() {
-    const results = analyzeWebsiteColors();
-    console.log('🎨 Analysis Results:', results);
-    console.log('📋 JSON Output:', JSON.stringify(results, null, 2));
-};
-document.head.appendChild(script);
-                            </code>
-                            <li>Press Enter to run the analysis</li>
-                            <li>Copy the results from the console</li>
-                        </ol>
-                        <p><strong>Note:</strong> This method works on ANY website since it runs directly in the target site's context!</p>
-                    </div>
-                `;
-            }
-        } else {
-            // Popup blocked or failed to open
-            console.log('Failed to open new tab - popup blocked or error occurred');
-            displayError(`
-                <strong>❌ Failed to open new tab</strong><br><br>
-                <strong>Possible reasons:</strong><br>
-                • Popup blocker is enabled<br>
-                • Browser security settings<br>
-                • Network restrictions<br><br>
-                <strong>Alternative solution:</strong><br>
-                1. Copy this URL: <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">${url}</code><br>
-                2. Open a new tab manually<br>
-                3. Paste the URL and navigate<br>
-                4. Follow the console analysis steps above
-            `);
-        }
-    } catch (error) {
-        console.error('Error opening new tab:', error);
-        displayError(`Failed to open new tab: ${error.message}`);
-    }
-}
-
-// Function to retry iframe analysis
-function retryIframeAnalysis() {
-    const urlInput = document.getElementById("urlInput");
-    if (urlInput && urlInput.value.trim()) {
-        analyzeByURL();
-    }
-}
-
-// Function to close iframe analysis
-function closeIframeAnalysis() {
-    const iframeContainer = document.getElementById('iframeContainer');
-    const iframe = document.getElementById('analysisIframe');
-    const iframeStatus = document.getElementById('iframeStatus');
-    
-    if (iframeContainer) iframeContainer.style.display = 'none';
-    if (iframe) iframe.src = '';
-    if (iframeStatus) {
-        iframeStatus.textContent = 'Ready';
-        iframeStatus.style.color = '#6c757d';
-    }
-}
-
-// Function to display analysis results
-function displayResults(results) {
-    const resultsDiv = document.getElementById("results");
-    if (!resultsDiv) return;
-
-    if (results.error) {
-        displayError(results.error);
-        return;
-    }
-
-    // Helper function to create color preview
-    function createColorPreview(color, label) {
-        if (color && (color.includes("→") || color.includes("("))) {
-            // For gradients, use the full gradient in background property
-            return `<span class="color-preview" style="background: ${color}"></span>`;
-        } else if (color && color.startsWith("#")) {
-            // For hex colors, show the color
-            return `<span class="color-preview" style="background-color: ${color}"></span>`;
-        } else if (color && (color.startsWith("rgb") || color.startsWith("hsl"))) {
-            // For rgb/hsl colors, show the color
-            return `<span class="color-preview" style="background-color: ${color}"></span>`;
-        } else {
-            // For other values, show a generic indicator
-            return `<span class="color-preview generic-color" title="${color}">🎨</span>`;
-        }
-    }
-
-    const html = `
-        <div class="results">
-            <h3>🎨 Analysis Results</h3>
-            <div class="result-item">
-                <strong>Background Color:</strong> 
-                ${createColorPreview(results.background_color, "Background")}
-                ${results.background_color}
-            </div>
-            <div class="result-item">
-                <strong>Primary Font Color:</strong> 
-                ${createColorPreview(results.primary_color_font, "Primary Font")}
-                ${results.primary_color_font}
-            </div>
-            <div class="result-item">
-                <strong>Primary Button Color:</strong> 
-                ${createColorPreview(results.primary_color_button, "Primary Button")}
-                ${results.primary_color_button}
-            </div>
-            <div class="result-item">
-                <strong>Secondary Font Color:</strong> 
-                ${createColorPreview(results.secondary_color_font, "Secondary Font")}
-                ${results.secondary_color_font}
-            </div>
-            <div class="result-item">
-                <strong>Secondary Button Color:</strong> 
-                ${createColorPreview(results.secondary_color_button, "Secondary Button")}
-                ${results.secondary_color_button}
-            </div>
-            <div class="result-item">
-                <strong>Website Font:</strong> ${results.font}
-            </div>
-            <div class="result-item">
-                <strong>Analysis Time:</strong> ${new Date(results.analysis_timestamp).toLocaleString()}
-            </div>
-            <div class="result-item">
-                <strong>URL:</strong> ${results.url}
-            </div>
-            
-            <h4>📋 JSON Output:</h4>
-            <pre style="background: #f1f1f1; padding: 15px; border-radius: 5px; overflow-x: auto;">${JSON.stringify(results, null, 2)}</pre>
-        </div>
-    `;
-
-    resultsDiv.innerHTML = html;
-}
-
-// Function to display errors
-function displayError(message) {
-    const resultsDiv = document.getElementById("results");
-    if (resultsDiv) {
-        resultsDiv.innerHTML = `<div class="error">❌ ${message}</div>`;
-    }
-}
-
-// Auto-run analysis if script is loaded in browser
-if (typeof window !== 'undefined' && document.readyState === 'complete') {
-    // Wait a bit for DOM to be fully ready
-    setTimeout(() => {
-        if (document.getElementById('results')) {
-            analyzeCurrentPage();
-        }
-    }, 1000);
-} else if (typeof window !== 'undefined') {
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            if (document.getElementById('results')) {
-                analyzeCurrentPage();
-            }
-        }, 1000);
-    });
+    window.analyzeHTMLContent = analyzeHTMLContent;
 }
