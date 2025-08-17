@@ -345,12 +345,25 @@ class WebsiteAnalyzer {
     normalizeColor(color) {
         if (!color) return null;
         
-        // Remove spaces and convert to lowercase
-        color = color.replace(/\s/g, '').toLowerCase();
+        // Clean up the color string first
+        color = color
+            .replace(/\s*!important\s*/gi, '')
+            .replace(/\s*;.*$/g, '')
+            .trim();
+            
+        if (!color) return null;
+        
+        // Remove extra spaces and convert to lowercase for processing
+        const processedColor = color.replace(/\s+/g, ' ').toLowerCase();
         
         // Handle CSS keywords that need to be resolved to actual values
-        if (color === 'initial' || color === 'inherit' || color === 'unset' || color === 'currentcolor') {
-            return this.resolveCSSKeyword(color);
+        if (processedColor === 'initial' || processedColor === 'inherit' || processedColor === 'unset' || processedColor === 'currentcolor') {
+            return this.resolveCSSKeyword(processedColor);
+        }
+        
+        // Skip transparent and invalid values
+        if (processedColor === 'transparent' || processedColor === 'rgba(0,0,0,0)' || processedColor === 'rgba(0, 0, 0, 0)') {
+            return null;
         }
         
         // Handle gradients and complex backgrounds
@@ -566,11 +579,24 @@ class WebsiteAnalyzer {
     getComputedColor(element, property) {
         try {
             const computedStyle = window.getComputedStyle(element);
-            const colorValue = computedStyle[property];
+            let colorValue = computedStyle[property];
+            
+            // Clean up the color value by removing !important and other CSS artifacts
+            if (colorValue) {
+                colorValue = colorValue
+                    .replace(/\s*!important\s*/gi, '')
+                    .replace(/\s*;.*$/g, '')
+                    .trim();
+            }
             
             // If it's a CSS keyword, resolve it
             if (colorValue === 'initial' || colorValue === 'inherit' || colorValue === 'unset' || colorValue === 'currentcolor') {
                 return this.resolveCSSKeyword(colorValue);
+            }
+            
+            // Skip invalid or empty values
+            if (!colorValue || colorValue === 'rgba(0, 0, 0, 0)' || colorValue === 'transparent') {
+                return null;
             }
             
             // Otherwise, normalize the color

@@ -1,3 +1,27 @@
+// Global variable to track iframe load status
+let iframeLoadedSuccessfully = false;
+
+// Helper function to normalize URL - add https if no protocol
+function normalizeUrl(url) {
+  if (!url) return url;
+  
+  // Remove whitespace
+  url = url.trim();
+  
+  // If URL already has a protocol, return as is
+  if (url.match(/^https?:\/\//i)) {
+    return url;
+  }
+  
+  // If URL starts with //, add https:
+  if (url.startsWith('//')) {
+    return 'https:' + url;
+  }
+  
+  // Otherwise, add https://
+  return 'https://' + url;
+}
+
 // Update the console code with the actual origin URL
 document.addEventListener("DOMContentLoaded", function () {
   const consoleCode = document.getElementById("consoleCode");
@@ -23,7 +47,11 @@ function copyCodeToClipboard() {
   if (!consoleCode) return;
 
   // Get the plain text content (without HTML tags)
-  const codeText = consoleCode.textContent || consoleCode.innerText;
+  let codeText = consoleCode.textContent || consoleCode.innerText;
+  
+  // Replace the placeholder with actual website_analyzer.js URL
+  const actualUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/') + 'website_analyzer.js';
+  codeText = codeText.replace('REPLACE_WITH_ACTUAL_URL', actualUrl);
 
   // Try to use the modern clipboard API
   if (navigator.clipboard && window.isSecureContext) {
@@ -109,6 +137,102 @@ function fallbackCopyTextToClipboard(text, button) {
   document.body.removeChild(textArea);
 }
 
+// New function to start analysis from landing page
+function startAnalysis() {
+  let url = document.getElementById("urlInput").value.trim();
+  
+  if (!url) {
+    alert("Please enter a valid URL");
+    return;
+  }
+  
+  // Normalize the URL (add https if needed)
+  url = normalizeUrl(url);
+  
+  // Update the input field with the normalized URL
+  document.getElementById("urlInput").value = url;
+  
+  // Show the analyzing URL
+  const analyzingUrlSpan = document.querySelector("#analyzingUrl span");
+  if (analyzingUrlSpan) {
+    analyzingUrlSpan.textContent = url;
+  }
+  
+  // Transition from landing page to analysis interface
+  const landingPage = document.getElementById("landingPage");
+  const analysisInterface = document.getElementById("analysisInterface");
+  
+  landingPage.style.display = "none";
+  analysisInterface.style.display = "block";
+  
+  // Start the analysis
+  analyzeByURL();
+}
+
+// Function to go back to landing page
+function backToLanding() {
+  const landingPage = document.getElementById("landingPage");
+  const analysisInterface = document.getElementById("analysisInterface");
+  const progressSection = document.getElementById("progressSection");
+  const resultsSection = document.getElementById("resultsSection");
+  
+  // Hide analysis interface and progress/results
+  analysisInterface.style.display = "none";
+  progressSection.style.display = "none";
+  resultsSection.style.display = "none";
+  
+  // Show landing page
+  landingPage.style.display = "block";
+  
+  // Reset URL input
+  document.getElementById("urlInput").value = "";
+  
+  // Reset iframe
+  const iframePlaceholder = document.getElementById("iframePlaceholder");
+  const analysisIframe = document.getElementById("analysisIframe");
+  if (iframePlaceholder) iframePlaceholder.style.display = "flex";
+  if (analysisIframe) analysisIframe.style.display = "none";
+}
+
+// Function to rerun analysis
+function rerunAnalysis() {
+  const rerunBtn = document.getElementById("rerunBtn");
+  const progressSection = document.getElementById("progressSection");
+  const resultsSection = document.getElementById("resultsSection");
+  
+  // Disable the rerun button and show loading state
+  rerunBtn.disabled = true;
+  rerunBtn.classList.add("loading");
+  rerunBtn.innerHTML = `
+    <i data-lucide="refresh-cw" class="rerun-icon"></i>
+    <span>Rerunning...</span>
+  `;
+  
+  // Re-initialize icons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+  
+  // Hide previous results
+  resultsSection.style.display = "none";
+  
+  // Start fresh analysis
+  analyzeByURL().finally(() => {
+    // Reset button state
+    rerunBtn.disabled = false;
+    rerunBtn.classList.remove("loading");
+    rerunBtn.innerHTML = `
+      <i data-lucide="refresh-cw" class="rerun-icon"></i>
+      <span>Rerun Analysis</span>
+    `;
+    
+    // Re-initialize icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  });
+}
+
 // Enhanced analyzeByURL function
 async function analyzeByURL() {
   const urlInput = document.getElementById("urlInput");
@@ -122,7 +246,13 @@ async function analyzeByURL() {
   const progressPercentage = document.getElementById("progressPercentage");
   const progressSteps = document.getElementById("progressSteps");
 
-  const url = urlInput.value.trim();
+  let url = urlInput.value.trim();
+  
+  // Normalize the URL (add https if needed)
+  url = normalizeUrl(url);
+  
+  // Update the input field with the normalized URL
+  urlInput.value = url;
 
   if (!url) {
     alert("Please enter a valid URL");
@@ -145,11 +275,77 @@ async function analyzeByURL() {
 
   // Update button state
   analyzeBtn.disabled = true;
-  analyzeBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  const isHeroButton = analyzeBtn.classList.contains('hero-analyze-button');
+  
+  if (isHeroButton) {
+    analyzeBtn.innerHTML = `
+      <i data-lucide="loader" class="button-icon animate-spin"></i>
+      <span>Analyzing...</span>
+    `;
+  } else {
+    analyzeBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  }
+  
+  // Re-initialize icons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
 
   // Always show iframe for visual comparison
   iframePlaceholder.style.display = "none";
   analysisIframe.style.display = "block";
+  
+  // Add comprehensive error handling for iframe loading
+  let iframeTimeout;
+  iframeLoadedSuccessfully = true; // Start optimistic - assume it will load
+  
+  analysisIframe.onload = function() {
+    clearTimeout(iframeTimeout);
+    console.log("Iframe loaded successfully");
+    
+    // Always consider iframe as loaded successfully when onload fires
+    // Don't try to access iframe content as it may cause cross-origin errors
+    iframeLoadedSuccessfully = true;
+    console.log('Iframe loaded successfully, setting iframeLoadedSuccessfully =', iframeLoadedSuccessfully);
+    
+    const analysisPanel = document.querySelector('.analysis-panel');
+    if (analysisPanel) {
+      analysisPanel.style.display = "block";
+    }
+    
+    // Optional: Try to detect if iframe is actually blocked, but don't fail on errors
+    try {
+      const iframeDoc = analysisIframe.contentDocument || analysisIframe.contentWindow.document;
+      if (iframeDoc && iframeDoc.location.href === 'about:blank') {
+        console.log("Iframe might be blocked, but keeping it visible");
+      }
+    } catch (e) {
+      // Cross-origin or other errors are normal - just log and continue
+      console.log("Cross-origin iframe (normal behavior):", e.message);
+    }
+  };
+  
+  analysisIframe.onerror = function() {
+    clearTimeout(iframeTimeout);
+    console.log("Iframe failed to load - hiding entire analysis panel");
+    iframeLoadedSuccessfully = false;
+    // Hide the entire analysis panel
+    const analysisPanel = document.querySelector('.analysis-panel');
+    if (analysisPanel) {
+      analysisPanel.style.display = "none";
+    }
+  };
+  
+  // Set a timeout for iframe loading (10 seconds - more lenient)
+  iframeTimeout = setTimeout(() => {
+    console.log("Iframe loading timeout - but keeping it visible as content might still load");
+    // Don't hide the iframe on timeout - some sites are just slow
+    // iframeLoadedSuccessfully = false;
+    
+    // Just log the timeout but keep iframe visible
+    console.log("Iframe took longer than 10 seconds to load, but keeping preview visible");
+  }, 10000);
+  
   // Add cache-busting parameter to ensure fresh content
   const separator = url.includes('?') ? '&' : '?';
   analysisIframe.src = url + separator + '_cacheBust=' + Date.now();
@@ -246,7 +442,17 @@ async function analyzeByURL() {
   } finally {
     // Reset button state
     analyzeBtn.disabled = false;
-    analyzeBtn.innerHTML = '<i data-lucide="search" class="button-icon"></i> Analyze Website';
+    const isHeroButton = analyzeBtn.classList.contains('hero-analyze-button');
+    
+    if (isHeroButton) {
+      analyzeBtn.innerHTML = `
+        <i data-lucide="search" class="button-icon"></i>
+        <span>Analyze Website</span>
+        <div class="button-shine"></div>
+      `;
+    } else {
+      analyzeBtn.innerHTML = '<i data-lucide="search" class="button-icon"></i> Analyze Website';
+    }
     
     // Re-initialize icons
     if (typeof lucide !== 'undefined') {
@@ -262,6 +468,21 @@ function displayResults(results) {
 
   // Always show the results section
   resultsSection.style.display = "block";
+  
+  // Ensure analysis panel is visible when showing results (if iframe loaded successfully)
+  const analysisPanel = document.querySelector('.analysis-panel');
+  console.log('displayResults - analysisPanel:', analysisPanel, 'iframeLoadedSuccessfully:', iframeLoadedSuccessfully);
+  
+  if (analysisPanel && iframeLoadedSuccessfully) {
+    console.log('Forcing analysis panel to be visible');
+    analysisPanel.style.display = "block";
+    
+    // Also make sure the integrated preview is visible
+    const integratedPreview = analysisPanel.querySelector('.integrated-preview');
+    if (integratedPreview) {
+      integratedPreview.style.display = "block";
+    }
+  }
 
   if (results.error) {
     displayError(results.error);
@@ -283,31 +504,37 @@ function displayResults(results) {
   const resultItems = [
     {
       label: "Background Color",
+      icon: "square",
       value: results.background_color || "Not detected",
       type: "color",
     },
     {
       label: "Primary Font Color",
+      icon: "type",
       value: results.primary_color_font || "Not detected",
       type: "color",
     },
     {
       label: "Primary Button Color",
+      icon: "mouse-pointer",
       value: results.primary_color_button || "Not detected",
       type: "color",
     },
     {
       label: "Secondary Font Color",
+      icon: "align-left",
       value: results.secondary_color_font || "Not detected",
       type: "color",
     },
     {
       label: "Secondary Button Color",
+      icon: "click",
       value: results.secondary_color_button || "Not detected",
       type: "color",
     },
     {
       label: "Website Font",
+      icon: "font",
       value: results.font || "Not detected",
       type: "font",
     },
@@ -317,28 +544,123 @@ function displayResults(results) {
   if (results.analysis_timestamp) {
     resultItems.push({
       label: "Analysis Time",
+      icon: "clock",
       value: new Date(results.analysis_timestamp).toLocaleString(),
       type: "info",
     });
   }
 
+  // Reset grid display for normal results
+  resultsGrid.style.display = "grid";
+  resultsGrid.style.gridTemplateColumns = "";
+  
   resultsGrid.innerHTML = resultItems
     .map(
       (item) => `
       <div class="result-item">
-        <div class="result-label">${item.label}</div>
+        <div class="result-label">
+          <i data-lucide="${item.icon}" class="result-icon"></i>
+          ${item.label}
+        </div>
         <div class="result-value">
           ${
-            item.type === "color" && item.value !== "Not detected"
-              ? `<span class="color-preview" style="background: ${item.value}"></span>`
+            item.type === "color" && item.value !== "Not detected" && isValidColor(item.value)
+              ? `<div class="color-preview" style="background-color: ${cleanColorValue(item.value)}"></div>`
+              : item.type === "color" 
+              ? `<div class="color-preview-empty"></div>` 
               : ""
           }
-          <span>${item.value}</span>
+          <span class="result-text">${cleanDisplayValue(item.value)}</span>
+          ${
+            item.type === "color" && isValidColor(item.value)
+              ? `<button class="copy-color-btn" onclick="copyToClipboard('${cleanColorValue(item.value)}')" title="Copy color">
+                   <i data-lucide="copy" class="copy-color-icon"></i>
+                 </button>`
+              : ""
+          }
         </div>
       </div>
     `
     )
     .join("");
+    
+  // Re-initialize icons after updating the DOM
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+}
+
+// Helper functions for color processing
+function isValidColor(color) {
+  if (!color || color === "Not detected" || color.includes("!important")) {
+    return false;
+  }
+  
+  // Check if it's a valid CSS color format
+  const colorFormats = [
+    /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, // Hex colors
+    /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/, // RGB colors
+    /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)$/, // RGBA colors
+    /^hsl\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*\)$/, // HSL colors
+    /^hsla\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*,\s*[\d.]+\s*\)$/, // HSLA colors
+  ];
+  
+  return colorFormats.some(format => format.test(color.trim()));
+}
+
+function cleanColorValue(color) {
+  if (!color) return "";
+  
+  // Remove !important and other CSS artifacts
+  return color
+    .replace(/\s*!important\s*/gi, "")
+    .replace(/\s*;.*$/g, "")
+    .trim();
+}
+
+function cleanDisplayValue(value) {
+  if (!value) return "Not detected";
+  
+  // Clean up the display value
+  let cleaned = value
+    .replace(/\s*!important\s*/gi, "")
+    .replace(/\s*;.*$/g, "")
+    .trim();
+    
+  // If it's a long color value, truncate it
+  if (cleaned.length > 50) {
+    cleaned = cleaned.substring(0, 47) + "...";
+  }
+  
+  return cleaned || "Not detected";
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      // Show temporary feedback
+      showCopyFeedback("Color copied!");
+    }).catch(() => {
+      fallbackCopyTextToClipboard(text);
+    });
+  } else {
+    fallbackCopyTextToClipboard(text);
+  }
+}
+
+function showCopyFeedback(message) {
+  // Create a temporary toast notification
+  const toast = document.createElement('div');
+  toast.className = 'copy-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  // Show and hide the toast
+  setTimeout(() => toast.classList.add('show'), 100);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => document.body.removeChild(toast), 300);
+  }, 2000);
 }
 
 // Enhanced displayError function
@@ -346,14 +668,119 @@ function displayError(message) {
   const resultsSection = document.getElementById("resultsSection");
   const resultsGrid = document.getElementById("resultsGrid");
 
+  // Determine error type and customize message
+  let errorTitle = "Analysis Failed";
+  let errorIcon = "alert-circle";
+  let actionButtons = "";
+  
+  if (message.includes("security restrictions") || message.includes("CORS")) {
+    errorTitle = "Security Restriction";
+    errorIcon = "shield-x";
+    actionButtons = `
+      <div class="error-actions">
+        <button class="error-action-btn primary" onclick="rerunAnalysis()">
+          <i data-lucide="refresh-cw"></i>
+          Try Again
+        </button>
+        <button class="error-action-btn" onclick="showConsoleInstructions()">
+          <i data-lucide="terminal"></i>
+          Use Console Method
+        </button>
+      </div>
+    `;
+  } else if (message.includes("timeout") || message.includes("timed out")) {
+    errorTitle = "Request Timeout";
+    errorIcon = "clock-x";
+    actionButtons = `
+      <div class="error-actions">
+        <button class="error-action-btn primary" onclick="rerunAnalysis()">
+          <i data-lucide="refresh-cw"></i>
+          Retry Analysis
+        </button>
+        <button class="error-action-btn" onclick="backToLanding()">
+          <i data-lucide="arrow-left"></i>
+          Try Different URL
+        </button>
+      </div>
+    `;
+  } else if (message.includes("network") || message.includes("fetch")) {
+    errorTitle = "Network Error";
+    errorIcon = "wifi-off";
+    actionButtons = `
+      <div class="error-actions">
+        <button class="error-action-btn primary" onclick="rerunAnalysis()">
+          <i data-lucide="refresh-cw"></i>
+          Retry
+        </button>
+        <button class="error-action-btn" onclick="checkConnection()">
+          <i data-lucide="activity"></i>
+          Check Connection
+        </button>
+      </div>
+    `;
+  } else {
+    actionButtons = `
+      <div class="error-actions">
+        <button class="error-action-btn primary" onclick="rerunAnalysis()">
+          <i data-lucide="refresh-cw"></i>
+          Try Again
+        </button>
+        <button class="error-action-btn" onclick="backToLanding()">
+          <i data-lucide="home"></i>
+          Back to Home
+        </button>
+      </div>
+    `;
+  }
+
   resultsSection.style.display = "block";
-  resultsGrid.innerHTML = `
-    <div class="error-state">
-      <div style="font-size: 2rem; margin-bottom: 16px;">❌</div>
-      <div style="font-weight: 600; margin-bottom: 8px;">Analysis Failed</div>
-      <div>${message}</div>
+  
+  // Clear the grid and switch to block display for full width error
+  resultsGrid.innerHTML = "";
+  resultsGrid.style.display = "block";
+  resultsGrid.style.gridTemplateColumns = "none";
+  
+  const errorElement = document.createElement("div");
+  errorElement.className = "error-state";
+  errorElement.innerHTML = `
+    <div class="error-icon">
+      <i data-lucide="${errorIcon}"></i>
     </div>
+    <div class="error-title">${errorTitle}</div>
+    <div class="error-message">${message}</div>
+    ${actionButtons}
   `;
+  
+  resultsGrid.appendChild(errorElement);
+  
+  // Re-initialize icons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+}
+
+// Helper function to show console instructions
+function showConsoleInstructions() {
+  const consoleSection = document.querySelector('.console-instructions');
+  if (consoleSection) {
+    consoleSection.scrollIntoView({ behavior: 'smooth' });
+    consoleSection.style.animation = 'pulse 2s';
+    setTimeout(() => {
+      consoleSection.style.animation = '';
+    }, 2000);
+  }
+}
+
+// Helper function to check connection
+function checkConnection() {
+  const testUrl = 'https://www.google.com';
+  fetch(testUrl, { method: 'HEAD', mode: 'no-cors' })
+    .then(() => {
+      showCopyFeedback('Connection is working. Try analyzing a different website.');
+    })
+    .catch(() => {
+      showCopyFeedback('No internet connection detected. Please check your network.');
+    });
 }
 
 // Function to add a new progress step
@@ -427,14 +854,31 @@ function showUrlHistory() {
   history.forEach((item, index) => {
     const historyItem = document.createElement("div");
     historyItem.className = "url-history-item";
+    
+    // Generate favicon URL
+    try {
+      const domain = new URL(item.url).hostname;
+      const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+      historyItem.style.setProperty('--favicon-url', `url("${faviconUrl}")`);
+    } catch (e) {
+      // Use default icon if URL parsing fails
+    }
+    
     historyItem.innerHTML = `
-      <div class="url-text">${item.url}</div>
-      <div class="url-date">Analyzed: ${new Date(
-        item.timestamp
-      ).toLocaleDateString()}</div>
+      <div class="url-history-content">
+        <div class="url-text">${item.url}</div>
+        <div class="url-date">Analyzed: ${new Date(
+          item.timestamp
+        ).toLocaleDateString()}</div>
+      </div>
+      <button class="url-history-remove" onclick="removeFromHistory('${item.url}', event)" title="Remove from history">
+        <i data-lucide="x"></i>
+      </button>
     `;
 
-    historyItem.onclick = () => {
+    // Add click handler to the main content area (not the remove button)
+    const contentArea = historyItem.querySelector('.url-history-content');
+    contentArea.onclick = () => {
       urlInput.value = item.url;
       urlHistoryDropdown.style.display = "none";
       // Optionally auto-analyze the selected URL
@@ -445,6 +889,11 @@ function showUrlHistory() {
   });
 
   urlHistoryDropdown.style.display = "block";
+  
+  // Re-initialize Lucide icons for the newly added remove buttons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
 }
 
 // Function to save URL to history
@@ -477,6 +926,29 @@ function saveUrlToHistory(url) {
     );
   } catch (error) {
     console.error("Failed to save URL to history:", error);
+  }
+}
+
+// Function to remove URL from history
+function removeFromHistory(url, event) {
+  // Prevent event bubbling to avoid triggering the item click
+  event.stopPropagation();
+  
+  try {
+    const history = JSON.parse(localStorage.getItem("websiteAnalyzerHistory") || "[]");
+    const filteredHistory = history.filter(item => item.url !== url);
+    
+    localStorage.setItem("websiteAnalyzerHistory", JSON.stringify(filteredHistory));
+    
+    // Refresh the dropdown to show updated history
+    showUrlHistory();
+    
+    // Re-initialize icons after updating the DOM
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  } catch (error) {
+    console.error("Failed to remove URL from history:", error);
   }
 }
 
@@ -1173,3 +1645,92 @@ document.head.appendChild(script);
     displayError(`Failed to open new tab: ${error.message}`);
   }
 }
+
+// Function to fetch GitHub stars count
+async function fetchGitHubStars() {
+  try {
+    const response = await fetch('https://api.github.com/repos/Rajek88/stylescope');
+    if (response.ok) {
+      const data = await response.json();
+      const starsCount = data.stargazers_count || 0;
+      
+      // Update the stars count display
+      const starsCountElement = document.querySelector('.stars-count');
+      const starsBadge = document.querySelector('.stars-badge');
+      
+      if (starsCountElement && starsBadge) {
+        const currentCount = parseInt(starsCountElement.textContent) || 0;
+        
+        // Only update if count changed
+        if (currentCount !== starsCount) {
+          starsCountElement.textContent = starsCount;
+          
+          // Add animation for count change
+          starsBadge.classList.add('updated');
+          setTimeout(() => {
+            starsBadge.classList.remove('updated');
+          }, 600);
+          
+          // Add special styling for non-zero stars
+          if (starsCount > 0) {
+            starsBadge.style.background = 'linear-gradient(135deg, #fbbf24, #f59e0b)';
+            starsBadge.style.color = 'white';
+            starsBadge.style.borderColor = '#f59e0b';
+            
+            // Ensure star icon and count are visible
+            const starIcon = starsBadge.querySelector('.star-icon');
+            const starsCount = starsBadge.querySelector('.stars-count');
+            if (starIcon) {
+              starIcon.style.color = '#92400e';
+              starIcon.style.fill = '#92400e';
+              starIcon.style.stroke = '#92400e';
+            }
+            if (starsCount) {
+              starsCount.style.color = 'white';
+            }
+          } else {
+            // Reset to default styling for zero stars
+            starsBadge.style.background = '';
+            starsBadge.style.color = '';
+            starsBadge.style.borderColor = '';
+            
+            // Reset star icon and count to default colors
+            const starIcon = starsBadge.querySelector('.star-icon');
+            const starsCount = starsBadge.querySelector('.stars-count');
+            if (starIcon) {
+              starIcon.style.color = '';
+              starIcon.style.fill = '';
+              starIcon.style.stroke = '';
+            }
+            if (starsCount) {
+              starsCount.style.color = '';
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.log('Could not fetch GitHub stars:', error);
+    // Keep the default 0 if API call fails
+  }
+}
+
+// Function to initialize GitHub stars
+function initializeGitHubStars() {
+  // Fetch stars count when page loads
+  fetchGitHubStars();
+  
+  // Refresh stars count every 5 minutes
+  setInterval(fetchGitHubStars, 5 * 60 * 1000);
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize Lucide icons
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+  
+  // Initialize GitHub stars
+  initializeGitHubStars();
+});

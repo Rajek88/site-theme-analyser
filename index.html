@@ -3,156 +3,524 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Website Color & Font Analyzer</title>
+    <title>StyleScope - Extract Colors & Typography from Any Website</title>
+    <meta
+      name="description"
+      content="StyleScope is a professional-grade tool for designers and developers to analyze color schemes, typography, and design elements from any website in seconds."
+    />
+    <meta
+      name="keywords"
+      content="website analyzer, color scheme analyzer, typography analyzer, design analysis, website design analysis, color extraction, typography extraction, design analysis tool, website design analysis tool, color extraction tool, typography extraction tool, design analysis tool, website design analysis tool, color extraction tool, typography extraction tool"
+    />
+    <meta name="author" content="Rajendra Kulkarni" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="bingbot" content="index, follow" />
+    <meta name="yandexbot" content="index, follow" />
+    <meta
+      name="og:title"
+      content="StyleScope - Extract Colors & Typography from Any Website"
+    />
+    <meta
+      name="og:description"
+      content="Professional-grade tool for designers and developers to analyze color schemes, typography, and design elements from any website in seconds."
+    />
+    <meta name="og:image" content="assets/logo.png" />
+    <meta name="og:url" content="https://rajendra-kulkarni.com/stylescope" />
+    <meta name="og:type" content="website" />
+    <meta name="og:site_name" content="StyleScope" />
+    <meta name="og:locale" content="en_US" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/logo.png" />
+    <link rel="apple-touch-icon" href="assets/logo.png" />
     <!-- Lucide Icons for professional icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="container">
-      <!-- Header -->
-      <div class="header">
-        <h1>
-          <i data-lucide="palette" class="header-icon"></i>
-          Website Color & Font Analyzer
-        </h1>
-        <p>
-          Professional analysis tool for extracting color schemes, typography,
-          and design elements from any website
-        </p>
-      </div>
-
-      <!-- Main Content -->
-      <div class="main-content">
-        <!-- Control Panel -->
-        <div class="control-panel">
-          <h2>
-            <i data-lucide="settings" class="section-icon"></i>
-            Analysis Controls
-          </h2>
-
-          <div class="url-input-group">
-            <input
-              type="url"
-              id="urlInput"
-              class="url-input"
-              placeholder="Enter website URL (e.g., https://example.com)"
-              onclick="showUrlHistory()"
-              onfocus="showUrlHistory()"
-            />
-            <div
-              id="urlHistoryDropdown"
-              class="url-history-dropdown"
-              style="display: none"
-            >
-              <!-- URL history items will be populated here -->
-            </div>
-          </div>
-
-          <button
-            id="analyzeBtn"
-            class="analyze-button"
-            onclick="analyzeByURL()"
-          >
-            <i data-lucide="search" class="button-icon"></i>
-            Analyze Website
-          </button>
+    <div class="landing-page" id="landingPage">
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-background">
+          <div class="gradient-orb orb-1"></div>
+          <div class="gradient-orb orb-2"></div>
+          <div class="gradient-orb orb-3"></div>
         </div>
 
-        <!-- Website Preview -->
-        <div class="website-preview">
-          <h2>
-            <i data-lucide="globe" class="section-icon"></i>
-            Website Preview
-          </h2>
+        <div class="container">
+          <!-- GitHub Link with Stars -->
+          <div class="hero-github-link">
+            <a
+              href="https://github.com/Rajek88/stylescope"
+              target="_blank"
+              class="github-stars-link"
+            >
+              <i data-lucide="github" class="github-stars-icon"></i>
+              <span class="github-text">GitHub</span>
+              <div class="stars-badge">
+                <i data-lucide="star" class="star-icon"></i>
+                <span class="stars-count">0</span>
+              </div>
+            </a>
+          </div>
 
-          <div class="iframe-container">
-            <div id="iframePlaceholder" class="iframe-placeholder">
-              <div>
-                <i data-lucide="monitor" class="placeholder-icon"></i>
-                <div>Enter a URL above and click "Analyze Website"</div>
-                <div style="font-size: 0.875rem; margin-top: 8px; opacity: 0.7">
-                  The website will appear here for visual comparison
+          <div class="hero-content">
+            <!-- App Logo -->
+            <div class="app-logo">
+              <div class="logo-icon">
+                <i data-lucide="palette"></i>
+              </div>
+              <span class="logo-text">StyleScope</span>
+            </div>
+
+            <div class="hero-badge">
+              <i data-lucide="sparkles" class="badge-icon"></i>
+              <span>Professional Design Analysis</span>
+            </div>
+
+            <h1 class="hero-title">
+              Extract Colors & Typography from
+              <span class="gradient-text">Any Website</span>
+            </h1>
+
+            <p class="hero-description">
+              Professional-grade tool for designers and developers to analyze
+              color schemes, typography, and design elements from any website in
+              seconds.
+            </p>
+
+            <div class="hero-input-section">
+              <div class="url-input-group">
+                <div class="input-wrapper">
+                  <i data-lucide="globe" class="input-icon"></i>
+                  <input
+                    type="url"
+                    id="urlInput"
+                    class="hero-url-input"
+                    placeholder="Enter website URL (e.g., https://example.com)"
+                    onclick="showUrlHistory()"
+                    onfocus="showUrlHistory()"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <button
+                  id="analyzeBtn"
+                  class="hero-analyze-button"
+                  onclick="startAnalysis()"
+                >
+                  <i data-lucide="search" class="button-icon"></i>
+                  <span>Analyze Website</span>
+                  <div class="button-shine"></div>
+                </button>
+
+                <div
+                  id="urlHistoryDropdown"
+                  class="url-history-dropdown"
+                  style="display: none"
+                >
+                  <!-- URL history items will be populated here -->
                 </div>
               </div>
             </div>
-            <iframe
-              id="analysisIframe"
-              class="analysis-iframe"
-              style="display: none"
-              sandbox="allow-scripts allow-same-origin allow-forms"
-            ></iframe>
-          </div>
-        </div>
-      </div>
 
-      <!-- Progress Section -->
-      <div id="progressSection" class="progress-section" style="display: none">
-        <div class="progress-container">
-          <div class="progress-header">
-            <div class="progress-title">
-              <i data-lucide="activity" class="progress-icon"></i>
-              <span>Analysis in Progress</span>
-            </div>
-            <div class="progress-status" id="progressStatus">
-              Initializing...
-            </div>
-          </div>
-
-          <div class="progress-bar-container">
-            <div class="progress-bar" id="progressBar">
-              <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-percentage" id="progressPercentage">0%</div>
-          </div>
-
-          <div class="progress-steps-container">
-            <div id="progressSteps" class="progress-steps-modern">
-              <!-- Progress steps will be populated here -->
+            <!-- Open Source Badge -->
+            <div class="open-source-badge">
+              <i data-lucide="github" class="github-icon"></i>
+              <span>Open Source</span>
+              <a
+                href="https://github.com/Rajek88/stylescope"
+                target="_blank"
+                class="github-link"
+              >
+                View on GitHub
+              </a>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Results Section -->
-      <div id="resultsSection" class="results-section" style="display: none">
-        <h2>
-          <i data-lucide="bar-chart" class="section-icon"></i>
-          Analysis Results
-        </h2>
+      <!-- Features Section -->
+      <section class="features">
+        <div class="container">
+          <div class="features-header">
+            <h2 class="section-title">Powerful Analysis Features</h2>
+            <p class="section-description">
+              Everything you need to understand any website's design system
+            </p>
+          </div>
 
-        <div id="resultsGrid" class="results-grid">
-          <!-- Results will be populated here -->
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-card-icon">
+                <i data-lucide="palette"></i>
+              </div>
+              <h3>Color Schemes</h3>
+              <p>
+                Extract primary, secondary, and accent colors from backgrounds,
+                text, and UI elements.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-icon">
+                <i data-lucide="type"></i>
+              </div>
+              <h3>Typography</h3>
+              <p>
+                Identify font families, weights, and styling used throughout the
+                website.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-icon">
+                <i data-lucide="layout"></i>
+              </div>
+              <h3>Design Elements</h3>
+              <p>
+                Analyze buttons, forms, and interactive elements for
+                comprehensive insights.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-icon">
+                <i data-lucide="download"></i>
+              </div>
+              <h3>Export Results</h3>
+              <p>
+                Copy analysis results as JSON or use our console script for
+                deeper integration.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-icon">
+                <i data-lucide="shield-check"></i>
+              </div>
+              <h3>Privacy First</h3>
+              <p>
+                All analysis happens in your browser. No data is stored or
+                transmitted to servers.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-card-icon">
+                <i data-lucide="code"></i>
+              </div>
+              <h3>Developer Friendly</h3>
+              <p>
+                Use our console script on any website for immediate analysis
+                results. Perfect for design system audits and development
+                workflows.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Console Instructions -->
-      <div class="console-instructions">
-        <h3>
-          <i data-lucide="lightbulb" class="tip-icon"></i>
-          Pro Tip - Console Analysis
-        </h3>
-        <p>To analyze any website perfectly, follow these steps:</p>
-        <ol>
-          <li>Go to the website you want to analyze</li>
-          <li>Open browser console (F12 → Console tab)</li>
-          <li>Copy and paste this code:</li>
-        </ol>
+      <!-- Console Script Section -->
+      <section class="console-section">
+        <div class="container">
+          <div class="console-header">
+            <h2 class="section-title">Developer Console Script</h2>
+            <p class="section-description">
+              Run our analysis directly in your browser's console on any website
+            </p>
+          </div>
 
-        <div class="code-block-container">
-          <button
-            id="copyCodeBtn"
-            class="copy-button"
-            onclick="copyCodeToClipboard()"
-          >
-            <i data-lucide="clipboard" class="copy-icon"></i>
-            Copy Code
+          <div class="console-demo">
+            <div class="console-card">
+              <div class="console-header-bar">
+                <div class="console-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <span class="console-title">Browser Console</span>
+              </div>
+              <div class="console-content">
+                <div class="console-line">
+                  <span class="console-prompt">></span>
+                  <span class="console-command"
+                    >// Copy and paste this script</span
+                  >
+                </div>
+                <div class="console-line">
+                  <span class="console-prompt">></span>
+                  <span class="console-command"
+                    >fetch('https://rajendra-kulkarni.com/style-analyzer.js')</span
+                  >
+                </div>
+                <div class="console-line">
+                  <span class="console-prompt">></span>
+                  <span class="console-command"> .then(r => r.text())</span>
+                </div>
+                <div class="console-line">
+                  <span class="console-prompt">></span>
+                  <span class="console-command"> .then(eval)</span>
+                </div>
+                <div class="console-line">
+                  <span class="console-prompt">></span>
+                  <span class="console-command">
+                    .then(() => analyzeWebsite())</span
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="console-benefits">
+              <h3>Why Use the Console Script?</h3>
+              <ul>
+                <li>
+                  <i data-lucide="zap"></i>
+                  <strong>Instant Analysis:</strong> Get results in seconds
+                </li>
+                <li>
+                  <i data-lucide="shield"></i>
+                  <strong>Privacy First:</strong> Runs entirely in your browser
+                </li>
+                <li>
+                  <i data-lucide="code"></i>
+                  <strong>Developer Workflow:</strong> Integrate into your
+                  development process
+                </li>
+                <li>
+                  <i data-lucide="download"></i>
+                  <strong>Export Ready:</strong> Get JSON data for further
+                  processing
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="container">
+          <div class="footer-content">
+            <div class="footer-brand">
+              <div class="footer-logo">
+                <div class="logo-icon">
+                  <i data-lucide="palette"></i>
+                </div>
+                <span class="logo-text">StyleScope</span>
+              </div>
+              <p class="footer-description">
+                Open source website design analysis tool for developers and
+                designers
+              </p>
+            </div>
+
+            <div class="footer-links">
+              <div class="footer-section">
+                <h4>Project</h4>
+                <ul>
+                  <li>
+                    <a
+                      href="https://github.com/Rajek88/stylescope"
+                      target="_blank"
+                    >
+                      <i data-lucide="github"></i> View on GitHub
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://github.com/Rajek88/stylescope/issues"
+                      target="_blank"
+                    >
+                      <i data-lucide="message-circle"></i> Report Issues
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://github.com/Rajek88/stylescope/pulls"
+                      target="_blank"
+                    >
+                      <i data-lucide="git-pull-request"></i> Contribute
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="footer-section">
+                <h4>Developer</h4>
+                <ul>
+                  <li>
+                    <a href="https://rajendra-kulkarni.com" target="_blank">
+                      <i data-lucide="globe"></i> Portfolio
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://github.com/rajek88" target="_blank">
+                      <i data-lucide="github"></i> GitHub
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://linkedin.com/in/raje-kulkarni"
+                      target="_blank"
+                    >
+                      <i data-lucide="linkedin"></i> LinkedIn
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bottom">
+            <p>
+              &copy; 2025 StyleScope. Created with ❤️ by
+              <a href="https://rajendra-kulkarni.com" target="_blank"
+                >Rajendra Kulkarni</a
+              >
+            </p>
+            <p class="footer-license">Open source under MIT License</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Analysis Interface (Hidden Initially) -->
+    <div
+      class="analysis-interface"
+      id="analysisInterface"
+      style="display: none"
+    >
+      <div class="container">
+        <!-- Analysis Header -->
+        <div class="analysis-header">
+          <button class="back-button" onclick="backToLanding()">
+            <i data-lucide="arrow-left" class="back-icon"></i>
+            Back to Home
           </button>
-          <pre id="consoleCode" class="code-block"><code>
+
+          <div class="analysis-title">
+            <div class="app-logo">
+              <div class="logo-icon">
+                <i data-lucide="palette"></i>
+              </div>
+              <span class="logo-text">StyleScope</span>
+            </div>
+            <p class="analyzing-url" id="analyzingUrl">
+              Analyzing: <span></span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Analysis Panel with Integrated Preview -->
+        <div class="analysis-panel">
+          <!-- Integrated Website Preview -->
+          <div class="integrated-preview">
+            <div class="preview-header">
+              <i data-lucide="globe" class="preview-icon"></i>
+              <span>Live Preview</span>
+            </div>
+
+            <div class="iframe-container">
+              <div id="iframePlaceholder" class="iframe-placeholder">
+                <div>
+                  <i data-lucide="monitor" class="placeholder-icon"></i>
+                  <div>Website preview will appear here</div>
+                </div>
+              </div>
+              <iframe
+                id="analysisIframe"
+                class="analysis-iframe"
+                style="display: none"
+                sandbox="allow-scripts allow-same-origin allow-forms"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div
+          id="progressSection"
+          class="progress-section"
+          style="display: none"
+        >
+          <div class="progress-container">
+            <div class="progress-header">
+              <div class="progress-title">
+                <i data-lucide="activity" class="progress-icon"></i>
+                <span>Analysis in Progress</span>
+              </div>
+              <div class="progress-status" id="progressStatus">
+                Initializing...
+              </div>
+            </div>
+
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+              <div class="progress-percentage" id="progressPercentage">0%</div>
+            </div>
+
+            <div class="progress-steps-container">
+              <div id="progressSteps" class="progress-steps-modern">
+                <!-- Progress steps will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="results-section" style="display: none">
+          <div class="results-header">
+            <h2>
+              <i data-lucide="bar-chart" class="section-icon"></i>
+              Analysis Results
+            </h2>
+            <button
+              class="rerun-button"
+              id="rerunBtn"
+              onclick="rerunAnalysis()"
+            >
+              <i data-lucide="refresh-cw" class="rerun-icon"></i>
+              Rerun Analysis
+            </button>
+          </div>
+
+          <div id="resultsGrid" class="results-grid">
+            <!-- Results will be populated here -->
+          </div>
+        </div>
+
+        <!-- Console Instructions -->
+        <div class="console-instructions">
+          <h3>
+            <i data-lucide="lightbulb" class="tip-icon"></i>
+            Pro Tip - Console Analysis
+          </h3>
+          <p>To analyze any website perfectly, follow these steps:</p>
+          <ol>
+            <li>Go to the website you want to analyze</li>
+            <li>Open browser console (F12 → Console tab)</li>
+            <li>Copy and paste this code:</li>
+          </ol>
+
+          <div class="code-block-container">
+            <button
+              id="copyCodeBtn"
+              class="copy-button"
+              onclick="copyCodeToClipboard()"
+            >
+              <i data-lucide="clipboard" class="copy-icon"></i>
+              Copy Code
+            </button>
+            <pre id="consoleCode" class="code-block"><code>
 <span class="js-comment">// Fetch and execute the analyzer</span>
 <span class="js-keyword">const</span> <span class="js-variable">script</span> = <span class="js-function">fetch</span>(<span class="js-string js-url-placeholder">'REPLACE_WITH_ACTUAL_URL'</span>)
     .<span class="js-function">then</span>(<span class="js-variable">response</span> => <span class="js-variable">response</span>.<span class="js-function">text</span>())
@@ -165,12 +533,13 @@
     .<span class="js-function">catch</span>(<span class="js-variable">error</span> => {
         <span class="js-function">console.error</span>(<span class="js-string">'Failed to load analyzer:'</span>, <span class="js-variable">error</span>);
     });</code></pre>
-        </div>
+          </div>
 
-        <p>
-          <strong>Note:</strong> This method works on ANY website since it runs
-          directly in the target site's context!
-        </p>
+          <p>
+            <strong>Note:</strong> This method works on ANY website since it
+            runs directly in the target site's context!
+          </p>
+        </div>
       </div>
     </div>
 
